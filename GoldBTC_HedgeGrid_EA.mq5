@@ -45,8 +45,7 @@ int      hSlow = INVALID_HANDLE;
 bool     g_paused     = false;   // 用户暂停
 bool     g_stopped    = false;   // 秒进秒出锁定停止
 int      g_streak     = 0;       // 连续秒进秒出轮数
-datetime g_cycleStart = 0;       // 本轮建仓起始时间
-bool     g_prevHasPos = false;
+datetime g_cycleStart = 0;       // 本轮建仓起始时间(0=当前空仓)
 
 double   g_point;
 int      g_digits;
@@ -190,13 +189,13 @@ void OnTick()
    double totalProfit=buyProfit+selProfit;
    bool   hasPos     =(totalCnt>0);
 
-   //--- 记录本轮建仓开始(由空仓->有仓)
-   if(hasPos && !g_prevHasPos){ g_cycleStart=TimeCurrent(); PersistState(); }
+   //--- 记录本轮建仓开始(由空仓->有仓;重启中途持仓则沿用已存时间)
+   if(hasPos && g_cycleStart==0){ g_cycleStart=TimeCurrent(); PersistState(); }
 
    //--- 唯一自动平仓:总浮盈达标全平(无均价止盈止损/无跟踪止损)
    if(hasPos && InpTargetProfit>0 && totalProfit>=InpTargetProfit)
    {
-      datetime dur=TimeCurrent()-g_cycleStart;
+      long dur=(long)TimeCurrent()-(long)g_cycleStart;
       CloseAllPositions();
       if(g_cycleStart>0 && dur>=0 && dur<InpScalpSeconds)   // 秒进秒出判定
       {
@@ -204,10 +203,9 @@ void OnTick()
          if(g_streak>=InpScalpMaxStreak){ g_stopped=true; Print("⚠ 连续",g_streak,"轮秒进秒出,EA已停止"); }
       }
       else g_streak=0;
-      g_cycleStart=0; g_prevHasPos=false; PersistState(); RefreshPanel();
+      g_cycleStart=0; PersistState(); RefreshPanel();
       return;
    }
-   g_prevHasPos=hasPos;
 
    //--- 停止/暂停:不开新仓
    if(g_stopped || g_paused) return;
@@ -353,7 +351,7 @@ void OnChartEvent(const int id,const long &lparam,const double &dparam,const str
    else if(sparam==PFX+"btnClose")           // 手动全平(应急)
    {
       CloseAllPositions();
-      g_cycleStart=0; g_prevHasPos=false; PersistState();
+      g_cycleStart=0; PersistState();
       ObjectSetInteger(0,sparam,OBJPROP_STATE,false);
       RefreshPanel();
    }
