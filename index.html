@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>黄金 / 比特币 双向对冲阶梯加仓 EA · MT5</title>
+<meta name="description" content="MetaTrader5 自动化交易 EA:黄金(XAUUSD)与比特币(BTCUSD)双向对冲、20/60 均线、逆势阶梯加仓、总盈利达标全平、点差与秒进秒出双重风控,内置图形化面板。">
+<meta name="keywords" content="MT5,MQL5,EA,黄金,XAUUSD,比特币,BTCUSD,对冲,阶梯加仓,量化交易,自动交易">
+<meta property="og:title" content="黄金/比特币 双向对冲阶梯加仓 EA">
+<meta property="og:description" content="MT5 自动化交易 EA:双向对冲 + 逆势阶梯加仓 + 总盈利全平 + 点差/秒进秒出风控 + 图形面板。">
+<meta property="og:type" content="website">
+<style>
+:root{
+  --bg:#0e0f13; --panel:#161821; --panel2:#1d2029; --line:#2a2e3a;
+  --txt:#e9ecf1; --muted:#9aa3b2; --gold:#f4c04e; --btc:#f7931a;
+  --up:#28c76f; --down:#ff5c66; --blue:#3ba0ff;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{font-family:"Segoe UI","Microsoft YaHei",system-ui,sans-serif;background:var(--bg);
+  color:var(--txt);line-height:1.65;-webkit-font-smoothing:antialiased}
+a{color:var(--blue);text-decoration:none}
+.wrap{max-width:960px;margin:0 auto;padding:0 20px}
+.hero{padding:64px 0 40px;text-align:center;
+  background:radial-gradient(900px 380px at 50% -10%,rgba(244,192,78,.14),transparent 70%)}
+.badges{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-bottom:22px}
+.badge{font-size:12px;padding:4px 10px;border:1px solid var(--line);border-radius:999px;
+  color:var(--muted);background:var(--panel)}
+h1{font-size:34px;line-height:1.25;margin-bottom:14px}
+h1 .g{color:var(--gold)} h1 .b{color:var(--btc)}
+.sub{color:var(--muted);font-size:17px;max-width:640px;margin:0 auto 28px}
+.cta{display:flex;gap:12px;justify-content:center;flex-wrap:wrap}
+.btn{display:inline-block;padding:12px 22px;border-radius:10px;font-weight:600;font-size:15px}
+.btn.primary{background:linear-gradient(135deg,var(--gold),var(--btc));color:#1a1206}
+.btn.ghost{border:1px solid var(--line);color:var(--txt);background:var(--panel)}
+.btn:hover{transform:translateY(-1px);transition:.15s}
+section{padding:44px 0;border-top:1px solid var(--line)}
+h2{font-size:24px;margin-bottom:8px}
+.lead{color:var(--muted);margin-bottom:26px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:16px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px 18px 20px}
+.card h3{font-size:16px;margin-bottom:6px;display:flex;align-items:center;gap:8px}
+.card .n{width:24px;height:24px;flex:none;border-radius:7px;background:var(--panel2);
+  color:var(--gold);font-size:13px;display:grid;place-items:center;border:1px solid var(--line)}
+.card p{color:var(--muted);font-size:14px}
+/* panel mock */
+.panelwrap{display:flex;justify-content:center}
+.panel{width:320px;background:#1c1c22;border:1px solid #33343d;border-radius:10px;
+  padding:14px;font-family:Consolas,"Courier New",monospace;font-size:13px;box-shadow:0 12px 34px rgba(0,0,0,.5)}
+.panel .ttl{color:var(--gold);font-family:"Microsoft YaHei",sans-serif;font-weight:700;margin-bottom:10px}
+.panel .row{display:flex;gap:6px;margin:9px 0}
+.panel .pbtn{flex:1;text-align:center;color:#fff;border-radius:5px;padding:5px 0;
+  font-family:"Microsoft YaHei",sans-serif;font-size:12px}
+.pbtn.b1{background:#007acc}.pbtn.b2{background:#b03a2e}.pbtn.b3{background:#5c5c62}
+.panel .st{margin:3px 0;color:#c7c7cf}
+.panel .lime{color:var(--up)}.panel .red{color:var(--down)}.panel .gold{color:var(--gold)}
+.panel .blue{color:#78c8ff}.panel .orange{color:#ffb478}.panel .grey{color:#8b8b93}
+/* table */
+table{width:100%;border-collapse:collapse;font-size:14px}
+th,td{text-align:left;padding:10px 12px;border-bottom:1px solid var(--line)}
+th{color:var(--muted);font-weight:600}
+td code{background:var(--panel2);padding:2px 7px;border-radius:6px;color:var(--gold);font-size:13px}
+.def{color:var(--muted)}
+/* steps */
+ol.steps{list-style:none;counter-reset:s}
+ol.steps li{counter-increment:s;position:relative;padding:12px 0 12px 44px;border-bottom:1px solid var(--line);color:var(--muted)}
+ol.steps li::before{content:counter(s);position:absolute;left:0;top:12px;width:28px;height:28px;
+  border-radius:8px;background:var(--panel2);border:1px solid var(--line);color:var(--gold);
+  display:grid;place-items:center;font-weight:700;font-size:14px}
+ol.steps b{color:var(--txt)}
+code.inline{background:var(--panel2);padding:2px 7px;border-radius:6px;color:var(--gold);font-size:13px}
+.warn{background:rgba(255,92,102,.08);border:1px solid rgba(255,92,102,.35);border-radius:12px;
+  padding:18px 20px;color:#ffd0d4;font-size:14px}
+.warn h2{color:var(--down)}
+footer{padding:34px 0 60px;text-align:center;color:var(--muted);font-size:13px;border-top:1px solid var(--line)}
+@media(max-width:600px){h1{font-size:26px}.hero{padding:44px 0 30px}}
+</style>
+</head>
+<body>
+<header class="hero">
+  <div class="wrap">
+    <div class="badges">
+      <span class="badge">MetaTrader 5</span>
+      <span class="badge">MQL5</span>
+      <span class="badge">XAUUSD 黄金</span>
+      <span class="badge">BTCUSD 比特币</span>
+      <span class="badge">对冲账户</span>
+    </div>
+    <h1><span class="g">黄金</span> / <span class="b">比特币</span> 双向对冲阶梯加仓 EA</h1>
+    <p class="sub">全天双向建仓 · 20/60 均线展示 · 逆势阶梯加仓 · 总盈利达标全平 ·
+       点差与「秒进秒出」双重风控 · 内置图形化面板一键操作。</p>
+    <div class="cta">
+      <a class="btn primary" href="./GoldBTC_HedgeGrid_EA.mq5" download>⬇ 下载 EA 源码 (.mq5)</a>
+      <a class="btn ghost" href="https://github.com/jliushi/mt5-gold-btc-ea" target="_blank" rel="noopener">GitHub 仓库</a>
+    </div>
+  </div>
+</header>
+
+<section id="features">
+  <div class="wrap">
+    <h2>策略概览</h2>
+    <p class="lead">严格按照 7 条交易规则实现,每条都可在参数中调节。</p>
+    <div class="grid">
+      <div class="card"><h3><span class="n">1</span>双向 · 全天 · 点差风控</h3>
+        <p>多空同时持仓,全天可建仓;当点差超过设定上限时自动禁止开仓(含加仓)。</p></div>
+      <div class="card"><h3><span class="n">2</span>均线首单免金叉</h3>
+        <p>加载 20 / 60 周期均线用于展示;首单无需等待金叉死叉,自动同时开出多、空首单。</p></div>
+      <div class="card"><h3><span class="n">3</span>仅逆势阶梯加仓</h3>
+        <p>关闭顺势加仓;价格逆向运行到网格间距即阶梯加仓,加仓不参考均线交叉。</p></div>
+      <div class="card"><h3><span class="n">4</span>手数与次数封顶</h3>
+        <p>固定首单手数、固定逆势加仓手数,并设单次最大手数与每方向最大加仓次数。</p></div>
+      <div class="card"><h3><span class="n">5</span>只按总盈利全平</h3>
+        <p>无均价止盈止损、无跟踪止损;总浮盈达标即全部平仓,其余平仓功能全部关闭。</p></div>
+      <div class="card"><h3><span class="n">6</span>秒进秒出熔断</h3>
+        <p>连续多轮「秒进秒出」(单轮存活过短)自动停止 EA,防止异常行情反复触发。</p></div>
+      <div class="card"><h3><span class="n">7</span>图形面板</h3>
+        <p>图表左上角面板显示状态、点差、均线、多空持仓、浮盈、加仓次数,并含暂停/全平/复位按钮。</p></div>
+    </div>
+  </div>
+</section>
+<section id="panel">
+  <div class="wrap">
+    <h2>图表内置面板</h2>
+    <p class="lead">EA 运行后显示在图表左上角(实时刷新),按钮可直接点击操作。</p>
+    <div class="panelwrap">
+      <div class="panel" aria-label="EA 面板示意">
+        <div class="ttl">◆ 黄金/BTC 双向阶梯 EA</div>
+        <div class="row">
+          <div class="pbtn b1">暂停</div>
+          <div class="pbtn b2">全平</div>
+          <div class="pbtn b3">复位</div>
+        </div>
+        <div class="st lime">状态: 运行中</div>
+        <div class="st grey">点差 18 / 上限50  可开</div>
+        <div class="st grey">MA20=2412.35 MA60=2410.88 [多头]</div>
+        <div class="st blue">多单 3 笔  手数 0.03</div>
+        <div class="st lime">&nbsp;&nbsp;多单浮盈 +12.40</div>
+        <div class="st orange">空单 2 笔  手数 0.02</div>
+        <div class="st red">&nbsp;&nbsp;空单浮盈 -4.10</div>
+        <div class="st grey">加仓 多2/空1  上限10</div>
+        <div class="st lime">总浮盈 +8.30  目标 50.00</div>
+        <div class="st grey">秒进秒出 0/3 轮</div>
+        <div class="st grey">间距300点 首单0.01 加仓0.01</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="params">
+  <div class="wrap">
+    <h2>参数说明</h2>
+    <p class="lead">所有参数在加载 EA 时的「输入」标签页中设置;下表为默认值。</p>
+    <table>
+      <thead><tr><th>参数</th><th>默认</th><th>说明</th></tr></thead>
+      <tbody>
+        <tr><td><code>InpMagic</code></td><td class="def">20260928</td><td>魔术号,黄金与比特币两个图表请设不同值</td></tr>
+        <tr><td><code>InpTargetProfit</code></td><td class="def">50.0</td><td>总盈利目标(账户货币),达标即全平</td></tr>
+        <tr><td><code>InpFirstLot</code></td><td class="def">0.01</td><td>首单固定手数</td></tr>
+        <tr><td><code>InpAddLot</code></td><td class="def">0.01</td><td>逆势加仓固定手数</td></tr>
+        <tr><td><code>InpMaxLotPerOrder</code></td><td class="def">1.00</td><td>单次最大手数(封顶)</td></tr>
+        <tr><td><code>InpMaxAddCount</code></td><td class="def">10</td><td>每方向最大加仓次数</td></tr>
+        <tr><td><code>InpGridStepPoints</code></td><td class="def">300</td><td>逆势阶梯加仓间距(点)</td></tr>
+        <tr><td><code>InpFastMA / InpSlowMA</code></td><td class="def">20 / 60</td><td>快/慢均线周期(展示用)</td></tr>
+        <tr><td><code>InpMaxSpreadPoints</code></td><td class="def">50</td><td>最大点差(点),超限禁止开仓</td></tr>
+        <tr><td><code>InpScalpSeconds</code></td><td class="def">15</td><td>单轮存活小于该秒数视为秒进秒出</td></tr>
+        <tr><td><code>InpScalpMaxStreak</code></td><td class="def">3</td><td>连续 N 轮秒进秒出则停止 EA</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+<section id="install">
+  <div class="wrap">
+    <h2>安装与使用</h2>
+    <p class="lead">需 MetaTrader 5 客户端,建议使用 <b>对冲(Hedging)账户</b>,否则多空会互相抵消。</p>
+    <ol class="steps">
+      <li><b>下载源码</b> —— 点击上方「下载 EA 源码」保存 <code class="inline">GoldBTC_HedgeGrid_EA.mq5</code>。</li>
+      <li><b>放入目录</b> —— MT5 菜单「文件 → 打开数据文件夹」,把 .mq5 放进 <code class="inline">MQL5\Experts\</code>。</li>
+      <li><b>编译</b> —— 在 MetaEditor 中打开该文件,按 <code class="inline">F7</code> 编译,生成 .ex5(无报错)。</li>
+      <li><b>挂载图表</b> —— 分别打开 <b>XAUUSD</b> 与 <b>BTCUSD</b> 图表,把 EA 拖到图表上。</li>
+      <li><b>允许交易</b> —— 勾选「允许算法交易」,并确认工具栏「算法交易」按钮为绿色。</li>
+      <li><b>设置参数</b> —— 按需调整手数、加仓间距、总盈利目标、点差上限等;两个图表用不同魔术号。</li>
+      <li><b>先测试</b> —— 强烈建议先在 <b>模拟账户</b> 或 <b>策略测试器</b> 中验证,再考虑实盘。</li>
+    </ol>
+  </div>
+</section>
+
+<section id="risk">
+  <div class="wrap">
+    <div class="warn">
+      <h2>⚠ 风险提示</h2>
+      <p>本 EA 采用双向对冲 + 逆势(马丁式)阶梯加仓思路。逆势加仓会随行情不利而放大持仓与保证金占用,
+      在单边趋势中可能造成快速且巨大的亏损甚至爆仓。历史表现不代表未来收益。<br><br>
+      本项目仅作技术学习与研究用途,<b>不构成任何投资建议</b>。是否用于实盘交易及由此产生的一切盈亏,
+      风险与责任完全由使用者自行承担。请务必先在模拟环境充分测试,并使用可承受损失的资金。</p>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    开源于 <a href="https://github.com/jliushi/mt5-gold-btc-ea" target="_blank" rel="noopener">github.com/jliushi/mt5-gold-btc-ea</a>
+    · MIT License · 仅供学习研究,风险自负
+  </div>
+</footer>
+</body>
+</html>
